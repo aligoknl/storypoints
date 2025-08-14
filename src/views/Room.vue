@@ -33,6 +33,8 @@ const roomStore = useRoomStore();
 onMounted(async () => {
   const id = String(route.params.id);
   const name = String(route.query.name || "Player");
+  window.addEventListener("beforeunload", roomStore.leaveRoom);
+
   try {
     await roomStore.joinRoom(id, name);
   } catch (err: unknown) {
@@ -55,6 +57,7 @@ const deck = computed<string[]>(() => {
 const revealed = computed<boolean>(
   () => (roomStore.roomMeta as RoomMeta | null)?.revealed ?? false
 );
+
 const myVote = computed<string | null>(() => {
   const me = roomStore.meUid;
   const p = (roomStore.players as PlayersMap)[me];
@@ -76,7 +79,12 @@ const stopTimer = (): void => {
     timer = null;
   }
 };
-onBeforeUnmount(stopTimer);
+
+onBeforeUnmount(() => {
+  window.removeEventListener("beforeunload", roomStore.leaveRoom);
+  roomStore.leaveRoom();
+  stopTimer();
+});
 
 watch(
   () => (roomStore.roomMeta as RoomMeta | null)?.countdownStart,
@@ -194,8 +202,7 @@ const startNewVoting = async (): Promise<void> => {
 
 const copyLink = (): void => {
   const url = `${location.origin}/room/${
-    roomStore.roomId
-  }?name=${encodeURIComponent(roomStore.meName || "Player")}`;
+    roomStore.roomId}`;
   navigator.clipboard.writeText(url);
   toast.add({
     severity: "info",

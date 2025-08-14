@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { db, auth } from "../lib/firebase";
+import { deleteDoc, doc } from "firebase/firestore";
 import {
   ref as dbRef,
   set,
@@ -113,12 +114,20 @@ export const useRoomStore = defineStore("room", () => {
     playersCb = () => off(playersRef, "value", playersListener);
   };
 
-  const leaveRoom = () => {
-    if (metaCb) metaCb();
-    if (playersCb) playersCb();
-    metaCb = null;
-    playersCb = null;
-  };
+const leaveRoom = async () => {
+  if (metaCb) metaCb();
+  if (playersCb) playersCb();
+  metaCb = null;
+  playersCb = null;
+
+  if (roomId && meUid) {
+    try {
+      await deleteDoc(doc(db, "rooms", roomId, "players", meUid));
+    } catch (err) {
+      console.error("Failed to remove player:", err);
+    }
+  }
+};
 
   const vote = async (value: string | null) => {
     if (!roomId.value || !meUid.value) return;

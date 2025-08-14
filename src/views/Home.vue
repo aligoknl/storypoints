@@ -106,7 +106,7 @@ const handleJoin = async (): Promise<void> => {
           />
           <Button
             label="Join Room"
-            class="self-start !bg-brand-yellow !border-brand-yellow"
+            class="self-start !bg-brand-yellow !border-brand-yellow hover:!bg-brand-yellowMid !text-brand-blackish"
             @click="handleJoin"
           />
         </div>
