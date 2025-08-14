@@ -1,13 +1,13 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { db, auth } from "../lib/firebase";
-import { deleteDoc, doc } from "firebase/firestore";
 import {
   ref as dbRef,
   set,
   update,
   get,
   onValue,
+  remove,
   off,
 } from "firebase/database";
 import DEFAULT_DECK from "../constants/deckValues";
@@ -114,15 +114,21 @@ export const useRoomStore = defineStore("room", () => {
     playersCb = () => off(playersRef, "value", playersListener);
   };
 
-const leaveRoom = async () => {
-  if (metaCb) metaCb();
-  if (playersCb) playersCb();
-  metaCb = null;
-  playersCb = null;
+const leaveRoom = async (): Promise<void> => {
+  // detach listeners
+  if (metaCb) {
+    metaCb();
+    metaCb = null;
+  }
+  if (playersCb) {
+    playersCb();
+    playersCb = null;
+  }
 
-  if (roomId && meUid) {
+  // remove my player from RTDB
+  if (roomId.value && meUid.value) {
     try {
-      await deleteDoc(doc(db, "rooms", roomId, "players", meUid));
+      await remove(dbRef(db, `rooms/${roomId.value}/players/${meUid.value}`));
     } catch (err) {
       console.error("Failed to remove player:", err);
     }
