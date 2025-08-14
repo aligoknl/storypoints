@@ -1,0 +1,41 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Dependency directories
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+dist-ssr/
+*.local
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Local env files
+.env
+.env.local
+.env.*.local
+
+# Firebase cache
+.firebase/
+.firebaserc
+
+# Mac / Linux system files
+.DS_Store
+Thumbs.db
+
+# Netlify build folder (optional if you deploy via Netlify)
+.netlify/
