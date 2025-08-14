@@ -7,7 +7,6 @@ import {
   update,
   get,
   onValue,
-  remove,
   off,
 } from "firebase/database";
 import DEFAULT_DECK from "../constants/deckValues";
@@ -114,26 +113,12 @@ export const useRoomStore = defineStore("room", () => {
     playersCb = () => off(playersRef, "value", playersListener);
   };
 
-const leaveRoom = async (): Promise<void> => {
-  // detach listeners
-  if (metaCb) {
-    metaCb();
+  const leaveRoom = () => {
+    if (metaCb) metaCb();
+    if (playersCb) playersCb();
     metaCb = null;
-  }
-  if (playersCb) {
-    playersCb();
     playersCb = null;
-  }
-
-  // remove my player from RTDB
-  if (roomId.value && meUid.value) {
-    try {
-      await remove(dbRef(db, `rooms/${roomId.value}/players/${meUid.value}`));
-    } catch (err) {
-      console.error("Failed to remove player:", err);
-    }
-  }
-};
+  };
 
   const vote = async (value: string | null) => {
     if (!roomId.value || !meUid.value) return;

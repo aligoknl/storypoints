@@ -33,7 +33,6 @@ const roomStore = useRoomStore();
 onMounted(async () => {
   const id = String(route.params.id);
   const name = String(route.query.name || "Player");
-  window.addEventListener("beforeunload", roomStore.leaveRoom);
 
   try {
     await roomStore.joinRoom(id, name);
@@ -81,8 +80,6 @@ const stopTimer = (): void => {
 };
 
 onBeforeUnmount(() => {
-  window.removeEventListener("beforeunload", roomStore.leaveRoom);
-  roomStore.leaveRoom();
   stopTimer();
 });
 
@@ -201,8 +198,7 @@ const startNewVoting = async (): Promise<void> => {
 };
 
 const copyLink = (): void => {
-  const url = `${location.origin}/room/${
-    roomStore.roomId}`;
+  const url = `${location.origin}`;
   navigator.clipboard.writeText(url);
   toast.add({
     severity: "info",
