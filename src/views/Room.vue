@@ -179,11 +179,19 @@ const closeResultModal = (): void => {
 const cast = (v: string): void => {
   myVote.value === v ? roomStore.vote(null) : roomStore.vote(v);
 };
-const triggerReveal = (): void => roomStore.startRevealCountdown();
-const startRound = (): void => roomStore.startRoundCountdown();
+
+const triggerReveal = async (): Promise<void> => {
+  await roomStore.startRevealCountdown();
+};
+
+const startRound = async (): Promise<void> => {
+  await roomStore.startRoundCountdown();
+};
+
 const startNewVoting = async (): Promise<void> => {
   await roomStore.startNewVoting();
 };
+
 const copyLink = (): void => {
   const url = `${location.origin}/room/${
     roomStore.roomId
