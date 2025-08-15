@@ -1,12 +1,12 @@
-# 🎯 StoryPoints
+# AllStoryPoints
 
-StoryPoints is a small app I built to make **planning poker** sessions easier (and a bit more fun 🎉).  
+AllStoryPoints is a small app I built to make **planning poker** sessions easier (and a bit more fun 🎉).  
 If you’ve ever done sprint planning, you know the drill: everyone votes on story points, then the team discusses.  
 This app lets you do that in real-time, with a clean UI and a couple of nice touches like timers, and even a Pokémon easter egg if everyone agrees 😉.
 
 ---
 
-## ✨ What it does
+## What it does
 
 - Create or join a room with your team
 - Everyone picks a card from the deck (Fibonacci, coffee, ? … you know the game)
@@ -17,7 +17,7 @@ This app lets you do that in real-time, with a clean UI and a couple of nice tou
 
 ---
 
-## 🛠️ Tech I used
+## Tech I used
 
 - **Vue 3 + TypeScript** – main frontend
 - **Pinia** – state management
@@ -27,7 +27,7 @@ This app lets you do that in real-time, with a clean UI and a couple of nice tou
 
 ---
 
-## 🚀 Getting started
+## Getting started
 
 Clone the repo:
 

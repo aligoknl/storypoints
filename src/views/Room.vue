@@ -11,6 +11,7 @@ import { useRoomStore } from "../stores/room";
 import PlanningCard from "../components/PlanningCard.vue";
 import PlayerSeat from "../components/PlayerSeat.vue";
 import Confetti from "../components/Confetti.vue";
+import { getDisplayName } from "../utils/displayName";
 import DEFAULT_DECK from "../constants/deckValues";
 
 type Player = { name: string; vote: string | null; joinedAt: number };
@@ -244,7 +245,7 @@ const allSameNumber = computed(() => {
     <header class="flex flex-wrap items-center justify-between gap-3">
       <div>
         <h2 class="text-2xl font-bold text-brand-teal">
-          StoryPoints — {{ roomStore.roomId }}
+          AllStoryPoints — {{ roomStore.roomId }}
         </h2>
         <p class="text-xl text-gray-600">
           Hello, <b>{{ roomStore.meName }}</b>
@@ -305,24 +306,24 @@ const allSameNumber = computed(() => {
         <template #title>Players</template>
         <template #content>
           <div class="flex flex-wrap gap-2">
-            <Tag
-              v-for="p in playersArr"
-              :key="p.uid"
-              :value="
-                revealed
-                  ? `${p.name} — ${norm(p.vote) ?? '—'}`
-                  : norm(p.vote)
-                  ? p.uid === roomStore.meUid
-                    ? `${p.name} — ${norm(p.vote)}`
-                    : `${p.name} — Voted`
-                  : `${p.name} — Not voted`
-              "
-              :class="
-                p.vote !== null && p.vote !== undefined
-                  ? '!bg-brand-teal !text-white !border-brand-teal'
-                  : '!bg-brand-yellow !text-brand-blackish !border-brand-yellow'
-              "
-            />
+  <Tag
+    v-for="p in playersArr"
+    :key="p.uid"
+    :value="
+      revealed
+        ? `${getDisplayName(p.name)} — ${norm(p.vote) ?? '—'}`
+        : norm(p.vote)
+        ? p.uid === roomStore.meUid
+          ? `${getDisplayName(p.name)} — ${norm(p.vote)}`
+          : `${getDisplayName(p.name)} — Voted`
+        : `${getDisplayName(p.name)} — Not voted`
+    "
+    :class="
+      p.vote !== null && p.vote !== undefined
+        ? '!bg-brand-teal !text-white !border-brand-teal'
+        : '!bg-brand-yellow !text-brand-blackish !border-brand-yellow'
+    "
+  />
           </div>
         </template>
       </Card>

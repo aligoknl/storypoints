@@ -25,7 +25,7 @@ const props = defineProps<{
     </div>
 
     <div
-      class="mt-2 text-xs font-medium text-brand-gray max-w-[96px] truncate"
+      class="mt-1 text-s font-medium text-brand-gray max-w-[96px] truncate"
       :title="props.name"
     >
       {{ props.name }}

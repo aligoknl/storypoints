@@ -87,7 +87,7 @@ const handleJoin = async (): Promise<void> => {
     <!-- Toast host -->
     <Toast />
 
-    <h1 class="text-3xl font-bold text-brand-teal text-center">StoryPoints</h1>
+    <h1 class="text-3xl font-bold text-brand-teal text-center">AllStoryPoints</h1>
 
     <!-- Join -->
     <Card>
