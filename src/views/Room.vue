@@ -253,9 +253,9 @@ const allSameNumber = computed(() => {
       </div>
       <div class="flex gap-2">
         <router-link to="/"
-          ><Button label="Back to Home" icon="pi pi-home"
+          ><Button label="Back to Home" icon="pi pi-home" class="!border-brand-gray" :class="{'!bg-brand-gray': true}"
         /></router-link>
-        <Button icon="pi pi-link" label="Copy link" @click="copyLink" />
+        <Button icon="pi pi-link" label="Copy link" @click="copyLink" class="!border-brand-tealMid" :class="{'!bg-brand-teal': true}" />
       </div>
     </header>
 
@@ -271,7 +271,7 @@ const allSameNumber = computed(() => {
               {{ timeLeft }}
             </div>
             <div class="flex flex-col gap-2">
-              <Button size="small" label="Start" @click="startRound" />
+              <Button size="small" label="Start" @click="startRound" class="!bg-brand-teal"/>
               <Button
                 size="small"
                 label="Stop"
@@ -294,11 +294,11 @@ const allSameNumber = computed(() => {
             >
               {{ average }}
             </p>
-            <p v-else class="opacity-70">
+            <p v-else class="text-sm text-brand-gray/90">
               No numeric votes yet (coffee & “?” ignored).
             </p>
           </template>
-          <p v-else class="opacity-70">Revealed average appears here.</p>
+          <p v-else class="text-sm text-brand-gray/80">Revealed average appears here.</p>
         </template>
       </Card>
 
@@ -401,7 +401,7 @@ const allSameNumber = computed(() => {
     </section>
 
     <!-- Deck -->
-    <section aria-labelledby="deck-title">
+    <section v-if="!revealed && !showCountdown" aria-labelledby="deck-title">
       <h3 id="deck-title" class="text-sm font-medium mb-2">Choose your card</h3>
       <div class="flex flex-wrap gap-2">
         <PlanningCard
@@ -409,7 +409,6 @@ const allSameNumber = computed(() => {
           :key="v"
           :label="v"
           :selected="myVote === v"
-          :disabled="revealed || showCountdown"
           @select="cast(v)"
         />
       </div>

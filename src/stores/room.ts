@@ -47,7 +47,6 @@ export const useRoomStore = defineStore("room", () => {
   let metaCb: (() => void) | null = null;
   let playersCb: (() => void) | null = null;
 
-  // Actions
   const createRoom = async (
     roomName: string,
     creatorName: string,

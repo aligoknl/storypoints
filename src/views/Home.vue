@@ -84,12 +84,8 @@ const handleJoin = async (): Promise<void> => {
 
 <template>
   <main class="p-6 max-w-xl mx-auto space-y-6">
-    <!-- Toast host -->
     <Toast />
-
     <h1 class="text-3xl font-bold text-brand-teal text-center">AllStoryPoints</h1>
-
-    <!-- Join -->
     <Card>
       <template #title>Join a Room</template>
       <template #content>
@@ -113,14 +109,12 @@ const handleJoin = async (): Promise<void> => {
       </template>
     </Card>
 
-    <!-- OR divider -->
     <div class="flex items-center gap-3 text-sm text-gray-500">
       <div class="h-px flex-1 bg-gray-200"></div>
       <span class="tracking-wider text-gray-500">— OR —</span>
       <div class="h-px flex-1 bg-gray-200"></div>
     </div>
 
-    <!-- Create -->
     <Card>
       <template #title>Create a Room</template>
       <template #content>
@@ -144,7 +138,6 @@ const handleJoin = async (): Promise<void> => {
       </template>
     </Card>
 
-    <!-- Footer -->
     <footer class="pt-6 text-center text-xs text-gray-500">
       Created by • Ali Gök • © 2025
     </footer>

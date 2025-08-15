@@ -2,7 +2,6 @@
 const props = defineProps<{
   label: string;
   selected?: boolean;
-  disabled?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -10,7 +9,7 @@ const emit = defineEmits<{
 }>();
 
 function handleClick() {
-  if (!props.disabled) emit("select", props.label);
+  emit("select", props.label);
 }
 </script>
 
@@ -22,7 +21,6 @@ function handleClick() {
       selected
         ? 'bg-brand-teal text-white border-brand-teal'
         : 'bg-white text-brand-gray border-brand-grayLight hover:border-brand-teal hover:text-brand-teal',
-      disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
     ]"
     @click="handleClick"
     :aria-pressed="selected"

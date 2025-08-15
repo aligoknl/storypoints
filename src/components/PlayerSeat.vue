@@ -12,13 +12,15 @@ const props = defineProps<{
       class="card-3d"
       :class="{ 'is-flipped': vote !== null }"
       aria-live="polite"
+      :aria-label="vote !== null ? `Card value ${vote}` : 'Hidden card'"
+      role="img"
     >
-      <div class="card-face card-front" aria-label="Hidden card">
+      <div class="card-face card-front" aria-hidden="true">
         <div class="pattern"></div>
       </div>
       <div
         class="card-face card-back"
-        :aria-label="`Card value ${vote ?? '—'}`"
+        aria-hidden="true"
       >
         <span class="value">{{ vote }}</span>
       </div>
