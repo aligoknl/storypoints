@@ -1,9 +1,12 @@
 # AllStoryPoints
 
-AllStoryPoints is a small app I built to make **planning poker** sessions easier (and a bit more fun 🎉).  
-If you’ve ever done sprint planning, you know the drill: everyone votes on story points, then the team discusses.  
+AllStoryPoints is a small app I built to make planning poker sessions easier.
+If you’ve ever done sprint planning, you know the drill: everyone votes on story points, then the team discusses.
 This app lets you do that in real-time, with a clean UI and a couple of nice touches like timers, and even a Pokémon easter egg if everyone agrees 😉.
 
+---
+## Demo
+https://allstorypoints.netlify.app/
 ---
 
 ## What it does
