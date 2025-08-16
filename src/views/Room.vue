@@ -194,6 +194,10 @@ const startRound = async (): Promise<void> => {
   await roomStore.startRoundCountdown();
 };
 
+const stopRound = async (): Promise<void> => {
+  await roomStore.stopRoundCountdown();
+};
+
 const startNewVoting = async (): Promise<void> => {
   await roomStore.startNewVoting();
 };
@@ -276,7 +280,7 @@ const allSameNumber = computed(() => {
                 size="small"
                 label="Stop"
                 severity="secondary"
-                @click="() => {}"
+                @click="stopRound"
               />
             </div>
           </div>

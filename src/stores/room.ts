@@ -126,7 +126,7 @@ export const useRoomStore = defineStore("room", () => {
     });
   };
 
-  const startRoundCountdown = async () => {
+  const startRoundCountdown = async (): Promise<void> => {
     if (!roomId.value) return;
     await update(dbRef(db, `rooms/${roomId.value}/meta`), {
       countdownStart: Date.now(),
@@ -135,12 +135,20 @@ export const useRoomStore = defineStore("room", () => {
     });
   };
 
-  const startRevealCountdown = async () => {
+  const startRevealCountdown = async (): Promise<void> => {
     if (!roomId.value) return;
     await update(dbRef(db, `rooms/${roomId.value}/meta`), {
       revealCountdownStart: Date.now(),
     });
   };
+
+  const stopRoundCountdown = async (): Promise<void> => {
+  if (!roomId.value) return;
+  await update(dbRef(db, `rooms/${roomId.value}/meta`), {
+    countdownStart: null,
+    revealCountdownStart: null,
+  });
+};
 
   const reveal = async () => {
     if (!roomId.value) return;
@@ -181,5 +189,6 @@ export const useRoomStore = defineStore("room", () => {
     startRevealCountdown,
     reveal,
     startNewVoting,
+    stopRoundCountdown,
   };
 });
