@@ -26,12 +26,13 @@ const props = defineProps<{
       </div>
     </div>
 
-    <div
-      class="mt-1 text-s font-medium text-brand-gray max-w-[96px] truncate"
-      :title="props.name"
-    >
-      {{ props.name }}
-    </div>
+<div
+  class="mt-1 text-sm font-medium text-brand-gray dark:text-brand-grayLight
+         leading-tight max-w-[120px] line-clamp-2 text-ellipsis"
+  :title="props.name"
+>
+  {{ props.name }}
+</div>
   </div>
 </template>
 

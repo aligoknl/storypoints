@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, onBeforeUnmount, watch } from "vue";
+import { computed, onMounted, ref, onBeforeUnmount, watch, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Button from "primevue/button";
 import Tag from "primevue/tag";
@@ -163,13 +163,34 @@ const average = computed<number | null>(() => {
 
 watch(revealed, (isRev, wasRev) => {
   if (isRev && !wasRev) {
-    showResultModal.value = true;
-    confettiOn.value = true;
-    if (resultTimeout) window.clearTimeout(resultTimeout);
-    resultTimeout = window.setTimeout(() => {
-      showResultModal.value = false;
+    const voteCount = Object.values(roomStore.players).filter(
+      (p) => p.vote !== null && p.vote !== undefined
+    ).length;
+
+    if (voteCount > 1) {
+      showResultModal.value = true;
+      confettiOn.value = true;
+
+      if (resultTimeout) window.clearTimeout(resultTimeout);
+      resultTimeout = window.setTimeout(() => {
+        showResultModal.value = false;
+        confettiOn.value = false;
+      }, 3000);
+    } else {
+      showResultModal.value = true;
       confettiOn.value = false;
-    }, 3000);
+    }
+  }
+});
+
+const srAverageMsg = ref<string>("");
+
+watch([revealed, average], async ([isRev, avg], [wasRev]) => {
+  if (isRev && (avg !== null)) {
+    await nextTick();
+    srAverageMsg.value = `Average ${avg}`;
+  } else if (!isRev) {
+    srAverageMsg.value = "";
   }
 });
 
@@ -245,21 +266,23 @@ const allSameNumber = computed(() => {
 
 <template>
   <main class="p-6 max-w-5xl mx-auto space-y-6 text-brand-gray">
-    <Toast />
+    <Toast class="dark:!bg-gray-800 dark:!text-gray-100"/>
     <header class="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h2 class="text-2xl font-bold text-brand-teal">
+        <h1 class="text-2xl font-bold text-brand-teal dark:text-black">
           AllStoryPoints — {{ roomStore.roomId }}
-        </h2>
-        <p class="text-xl text-gray-600">
+        </h1>
+        <p class="text-xl text-gray-600 dark:!text-black">
           Hello, <b>{{ roomStore.meName }}</b>
         </p>
       </div>
       <div class="flex gap-2">
-        <router-link to="/"
-          ><Button label="Back to Home" icon="pi pi-home" class="!border-brand-gray" :class="{'!bg-brand-gray': true}"
-        /></router-link>
-        <Button icon="pi pi-link" label="Copy link" @click="copyLink" class="!border-brand-tealMid" :class="{'!bg-brand-teal': true}" />
+        <RouterLink to="/" custom v-slot="{ navigate }">
+          <Button type="button" label="Back to Home" icon="pi pi-home" @click="navigate"
+            class="!border-brand-gray !bg-brand-gray dark:!text-white" />
+        </RouterLink>
+        <Button icon="pi pi-link" label="Copy link" @click="copyLink" class="!border-brand-tealMid dark:!text-white dark:!border-none"
+          :class="{'!bg-brand-teal': true}" />
       </div>
     </header>
 
@@ -270,18 +293,12 @@ const allSameNumber = computed(() => {
         <template #content>
           <div class="flex items-center gap-3">
             <div
-              class="w-20 h-20 rounded-full bg-brand-tealLight text-brand-teal flex items-center justify-center text-2xl font-bold"
-            >
+              class="w-20 h-20 rounded-full bg-brand-tealLight text-brand-teal flex items-center justify-center text-2xl font-bold">
               {{ timeLeft }}
             </div>
             <div class="flex flex-col gap-2">
-              <Button size="small" label="Start" @click="startRound" class="!bg-brand-teal"/>
-              <Button
-                size="small"
-                label="Stop"
-                severity="secondary"
-                @click="stopRound"
-              />
+              <Button size="small" label="Start" @click="startRound" class="!bg-brand-teal dark:!text-white" />
+              <Button size="small" label="Stop" severity="secondary" @click="stopRound" />
             </div>
           </div>
         </template>
@@ -291,29 +308,26 @@ const allSameNumber = computed(() => {
         <template #title>Average</template>
         <template #content>
           <template v-if="revealed">
-            <p
-              v-if="average !== null"
-              class="text-3xl font-bold text-brand-teal"
-              aria-live="polite"
-            >
+            <p v-if="average !== null" class="text-3xl font-bold text-brand-teal">
               {{ average }}
             </p>
             <p v-else class="text-sm text-brand-gray/90">
               No numeric votes yet (coffee & “?” ignored).
             </p>
           </template>
-          <p v-else class="text-sm text-brand-gray/80">Revealed average appears here.</p>
+          <p v-else class="text-sm text-brand-gray/80 dark:!text-white">Revealed average appears here.</p>
         </template>
       </Card>
+
+      <div class="sr-only" role="alert">
+        {{ srAverageMsg }}
+      </div>
 
       <Card>
         <template #title>Players</template>
         <template #content>
           <div class="flex flex-wrap gap-2">
-  <Tag
-    v-for="p in playersArr"
-    :key="p.uid"
-    :value="
+            <Tag v-for="p in playersArr" :key="p.uid" :value="
       revealed
         ? `${getDisplayName(p.name)} — ${norm(p.vote) ?? '—'}`
         : norm(p.vote)
@@ -321,13 +335,11 @@ const allSameNumber = computed(() => {
           ? `${getDisplayName(p.name)} — ${norm(p.vote)}`
           : `${getDisplayName(p.name)} — Voted`
         : `${getDisplayName(p.name)} — Not voted`
-    "
-    :class="
+    " :class="
       p.vote !== null && p.vote !== undefined
         ? '!bg-brand-teal !text-white !border-brand-teal'
         : '!bg-brand-yellow !text-brand-blackish !border-brand-yellow'
-    "
-  />
+    " />
           </div>
         </template>
       </Card>
@@ -336,100 +348,56 @@ const allSameNumber = computed(() => {
     <!-- Table -->
     <section class="relative">
       <div
-        class="relative w-full h-[340px] rounded-2xl bg-brand-white shadow-card ring-1 ring-brand-grayLight overflow-hidden"
-      >
-        <Confetti
-          v-if="confettiOn"
-          :density="8"
-          :durationMs="1600"
-          :showPokemon="allSameNumber"
-        />
+        class="relative w-full h-[340px] rounded-2xl bg-brand-white dark:bg-black shadow-card ring-1 ring-brand-grayLight dark:ring-brand-black overflow-hidden">
+        <Confetti v-if="confettiOn" :density="8" :durationMs="1600" :showPokemon="allSameNumber" />
         <transition name="fade">
-          <div
-            v-if="showCountdown"
-            class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-6xl font-bold text-brand-teal z-30"
-          >
+          <div v-if="showCountdown"
+            class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-6xl font-bold text-brand-teal dark:text-white z-30">
             {{ countdownNum }}
           </div>
         </transition>
 
         <div class="absolute inset-0">
-          <div
-            v-for="(p, i) in visiblePlayers"
-            :key="p.uid"
-            class="absolute left-1/2 top-1/2"
-            :style="{ transform: seatTransform(i) }"
-          >
-            <PlayerSeat
-              :name="p.name"
-              :vote="
+          <div v-for="(p, i) in visiblePlayers" :key="p.uid" class="absolute left-1/2 top-1/2"
+            :style="{ transform: seatTransform(i) }">
+            <PlayerSeat :name="p.name" :vote="
                 p.uid === roomStore.meUid
                   ? norm(p.vote)
                   : revealed
                   ? norm(p.vote)
                   : null
-              "
-              :revealed="revealed"
-            />
+              " :revealed="revealed" />
           </div>
         </div>
 
-        <div
-          v-if="!showCountdown"
-          class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center z-10"
-        >
-          <div
-            v-if="!revealed && !hasVotes"
-            class="px-5 py-2 rounded-full bg-brand-teal text-white text-sm shadow"
-          >
+        <div v-if="!showCountdown" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center z-10">
+          <div v-if="!revealed && !hasVotes" class="px-5 py-2 rounded-full bg-brand-teal text-white text-sm shadow">
             Pick a card
           </div>
           <transition name="scale">
-            <Button
-              v-if="!revealed && hasVotes"
-              label="Reveal Cards"
-              icon="pi pi-eye"
-              class="!bg-brand-gray !border-brand-blackish mt-2"
-              @click="triggerReveal"
-            />
+            <Button v-if="!revealed && hasVotes" label="Reveal Cards" icon="pi pi-eye"
+              class="!bg-brand-gray !border-brand-blackish mt-2 dark:!text-white" @click="triggerReveal" />
           </transition>
-          <Button
-            v-if="revealed"
-            label="Start New Voting"
-            icon="pi pi-refresh"
-            class="!bg-brand-teal !border-brand-teal mt-2"
-            @click="startNewVoting"
-          />
+          <Button v-if="revealed" label="Start New Voting" icon="pi pi-refresh"
+            class="!bg-brand-teal !border-brand-teal mt-2 dark:!text-white" @click="startNewVoting" />
         </div>
       </div>
     </section>
 
     <!-- Deck -->
     <section v-if="!revealed && !showCountdown" aria-labelledby="deck-title">
-      <h3 id="deck-title" class="text-sm font-medium mb-2">Choose your card</h3>
+      <h3 id="deck-title" class="text-sm font-medium mb-2 dark:!text-black">Choose your card</h3>
       <div class="flex flex-wrap gap-2">
-        <PlanningCard
-          v-for="v in deck"
-          :key="v"
-          :label="v"
-          :selected="myVote === v"
-          @select="cast(v)"
-        />
+        <PlanningCard v-for="v in deck" :key="v" :label="v" :selected="myVote === v" @select="cast(v)" />
       </div>
-      <p class="mt-2 text-sm" aria-live="polite">
+      <p class="mt-2 text-sm dark:!text-black" aria-live="polite">
         Your vote: <b>{{ myVote ?? "—" }}</b>
       </p>
     </section>
 
     <!-- Result Modal -->
-    <Dialog
-      v-model:visible="showResultModal"
-      modal
-      :closable="true"
-      :dismissableMask="true"
-      :draggable="false"
-      class="w-[95vw] max-w-md"
-    >
+    <Dialog v-model:visible="showResultModal" modal :closable="true" :dismissableMask="true" :draggable="false"
+      class="w-[95vw] max-w-md">
       <template #header>
         <div class="flex items-center gap-2">
           <i class="pi pi-star"></i>
@@ -438,16 +406,16 @@ const allSameNumber = computed(() => {
       </template>
 
       <div class="text-center space-y-3">
-        <div class="text-4xl font-extrabold text-brand-teal" aria-live="polite">
+        <div class="text-4xl font-extrabold text-brand-teal dark:text-white">
           {{ average !== null ? average : "—" }}
         </div>
-        <p class="text-sm text-brand-gray/80">
+        <p class="text-sm text-brand-gray/80 dark:!text-white">
           This is the average of all numeric votes.
         </p>
       </div>
 
       <template #footer>
-        <Button label="Close" @click="closeResultModal" />
+        <Button label="Close" @click="closeResultModal" class="!bg-brand-teal dark:!text-brand-white"/>
       </template>
     </Dialog>
   </main>
