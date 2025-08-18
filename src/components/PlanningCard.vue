@@ -20,7 +20,7 @@ function handleClick() {
     :class="[
       selected
         ? 'bg-brand-teal text-white border-brand-teal'
-        : 'bg-white text-brand-gray border-brand-grayLight hover:border-brand-teal hover:text-brand-teal',
+        : 'bg-white text-brand-gray border-brand-grayLight hover:border-brand-teal hover:text-brand-teal dark:bg-brand-blackish dark:text-gray-200 dark:border-gray-700 dark:hover:border-brand-teal dark:hover:text-brand-teal',
     ]"
     @click="handleClick"
     :aria-pressed="selected"

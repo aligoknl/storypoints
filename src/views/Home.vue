@@ -85,33 +85,23 @@ const handleJoin = async (): Promise<void> => {
 <template>
   <main class="p-6 max-w-xl mx-auto space-y-6">
     <Toast />
-    <h1 class="text-3xl font-bold text-brand-teal text-center">AllStoryPoints</h1>
+    <h1 class="text-3xl font-bold text-brand-teal text-center dark:text-black">AllStoryPoints</h1>
     <Card>
       <template #title>Join a Room</template>
       <template #content>
         <div class="flex flex-col gap-3">
-          <InputText
-            v-model="joinRoomName"
-            placeholder="Room name"
-            class="w-full"
-          />
-          <InputText
-            v-model="joinYourName"
-            placeholder="Your name"
-            class="w-full"
-          />
-          <Button
-            label="Join Room"
+          <InputText v-model="joinRoomName" placeholder="Room name" class="w-full" />
+          <InputText v-model="joinYourName" placeholder="Your name" class="w-full" />
+          <Button label="Join Room"
             class="self-start !bg-brand-yellow !border-brand-yellow hover:!bg-brand-yellowMid !text-brand-blackish"
-            @click="handleJoin"
-          />
+            @click="handleJoin" />
         </div>
       </template>
     </Card>
 
     <div class="flex items-center gap-3 text-sm text-gray-500">
       <div class="h-px flex-1 bg-gray-200"></div>
-      <span class="tracking-wider text-gray-500">— OR —</span>
+      <span class="tracking-wider text-gray-500 dark:text-black" >— OR —</span>
       <div class="h-px flex-1 bg-gray-200"></div>
     </div>
 
@@ -119,26 +109,19 @@ const handleJoin = async (): Promise<void> => {
       <template #title>Create a Room</template>
       <template #content>
         <div class="flex flex-col gap-3">
-          <InputText
-            v-model="createRoomName"
-            placeholder="Room name (e.g., Emerald)"
-            class="w-full"
-          />
-          <InputText
-            v-model="createYourName"
-            placeholder="Your name"
-            class="w-full"
-          />
-          <Button
-            label="Create Room"
-            class="self-start !bg-brand-teal !border-brand-teal hover:!bg-brand-tealMid"
-            @click="handleCreate"
-          />
+          <InputText v-model="createRoomName" placeholder="Room name (e.g., Emerald)" class="w-full" />
+          <InputText v-model="createYourName" placeholder="Your name" class="w-full" />
+          <Button label="Create Room" class="self-start
+         !bg-brand-teal !border-brand-teal !text-white
+         hover:!bg-brand-tealMid
+         focus-visible:!ring-2 focus-visible:!ring-brand-teal
+         focus-visible:!ring-offset-2 focus-visible:!ring-offset-white
+         dark:focus-visible:!ring-offset-gray-900" @click="handleCreate" />
         </div>
       </template>
     </Card>
 
-    <footer class="pt-6 text-center text-xs text-gray-500">
+    <footer class="pt-6 text-center text-xs text-gray-500 dark:text-black">
       Created by • Ali Gök • © 2025
     </footer>
   </main>
