@@ -185,7 +185,7 @@ watch(revealed, (isRev, wasRev) => {
 
 const srAverageMsg = ref<string>("");
 
-watch([revealed, average], async ([isRev, avg], [wasRev]) => {
+watch([revealed, average], async ([isRev, avg]) => {
   if (isRev && (avg !== null)) {
     await nextTick();
     srAverageMsg.value = `Average ${avg}`;
