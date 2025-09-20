@@ -22,7 +22,6 @@ type RoomMeta = {
   roundId: number;
 };
 
-// ---- Helpers ----
 const slugify = (text: string) =>
   text
     .toString()
@@ -43,7 +42,6 @@ export const useRoomStore = defineStore("room", () => {
   const meUid = ref("");
   const meName = ref("");
 
-  // Listeners cleanup
   let metaCb: (() => void) | null = null;
   let playersCb: (() => void) | null = null;
 
@@ -55,7 +53,6 @@ export const useRoomStore = defineStore("room", () => {
     const id = slugify(roomName);
     if (!id) throw new Error("Please enter a valid room name.");
 
-    // Prevent overwrite
     const exists = (await get(dbRef(db, `rooms/${id}/meta`))).exists();
     if (exists) throw new Error("Room name already taken. Choose another.");
 
@@ -87,14 +84,12 @@ export const useRoomStore = defineStore("room", () => {
     meUid.value = uid;
     meName.value = name;
 
-    // Upsert player
     await update(dbRef(db, `rooms/${id}/players/${uid}`), {
       name,
       vote: players.value[uid]?.vote ?? null,
       joinedAt: Date.now(),
     });
 
-    // Cleanup old listeners
     leaveRoom();
 
     const metaRef = dbRef(db, `rooms/${id}/meta`);

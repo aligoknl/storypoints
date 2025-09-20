@@ -19,16 +19,23 @@ const joinRoomName = ref<string>("");
 const joinYourName = ref<string>("");
 
 onMounted(() => {
-  const saved = localStorage.getItem("sp_name");
-  if (saved) {
-    createYourName.value = saved;
-    joinYourName.value = saved;
+  const savedName = localStorage.getItem("sp_name");
+  const savedRoomName = localStorage.getItem("sp_room");
+
+  if (savedName) {
+    joinYourName.value = savedName;
+  }
+  if (savedRoomName) {
+    joinRoomName.value = savedRoomName;
   }
 });
 
-const saveNameLocally = (name: string) => {
-  const trimmed = name.trim();
-  if (trimmed) localStorage.setItem("sp_name", trimmed);
+const saveNameLocally = (name: string, room: string) => {
+  const trimmedName = name.trim();
+  if (trimmedName) localStorage.setItem("sp_name", trimmedName);
+
+  const trimmedRoom = room.trim();
+  if (trimmedRoom) localStorage.setItem("sp_room", trimmedRoom);
 };
 
 const slugify = (text: string): string =>
@@ -51,7 +58,7 @@ const handleCreate = async (): Promise<void> => {
   }
   try {
     await roomStore.createRoom(createRoomName.value, createYourName.value);
-    saveNameLocally(createYourName.value);
+    saveNameLocally(createYourName.value, createRoomName.value);
     showSuccess("Room created", `Room: ${roomStore.roomId}`);
     router.push(
       `/room/${roomStore.roomId}?name=${encodeURIComponent(
@@ -72,7 +79,7 @@ const handleJoin = async (): Promise<void> => {
   const slug = slugify(joinRoomName.value);
   try {
     await roomStore.joinRoom(slug, joinYourName.value);
-    saveNameLocally(joinYourName.value);
+    saveNameLocally(joinYourName.value, joinRoomName.value);
     showSuccess("Joined room", `Room: ${slug}`);
     router.push(`/room/${slug}?name=${encodeURIComponent(joinYourName.value)}`);
   } catch (e: unknown) {

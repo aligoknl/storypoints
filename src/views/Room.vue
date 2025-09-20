@@ -266,7 +266,7 @@ const allSameNumber = computed(() => {
 
 <template>
   <main class="p-6 max-w-5xl mx-auto space-y-6 text-brand-gray">
-    <Toast class="dark:!bg-gray-800 dark:!text-gray-100"/>
+    <Toast class="dark:!bg-gray-800 dark:!text-gray-100" />
     <header class="flex flex-wrap items-center justify-between gap-3">
       <div>
         <h1 class="text-2xl font-bold text-brand-teal dark:text-black">
@@ -281,8 +281,8 @@ const allSameNumber = computed(() => {
           <Button type="button" label="Back to Home" icon="pi pi-home" @click="navigate"
             class="!border-brand-gray !bg-brand-gray dark:!text-white" />
         </RouterLink>
-        <Button icon="pi pi-link" label="Copy link" @click="copyLink" class="!border-brand-tealMid dark:!text-white dark:!border-none"
-          :class="{'!bg-brand-teal': true}" />
+        <Button icon="pi pi-link" label="Copy link" @click="copyLink"
+          class="!border-brand-tealMid dark:!text-white dark:!border-none" :class="{'!bg-brand-teal': true}" />
       </div>
     </header>
 
@@ -351,6 +351,10 @@ const allSameNumber = computed(() => {
         class="relative w-full h-[340px] rounded-2xl bg-brand-white dark:bg-black shadow-card ring-1 ring-brand-grayLight dark:ring-brand-black overflow-hidden">
         <Confetti v-if="confettiOn" :density="8" :durationMs="1600" :showPokemon="allSameNumber" />
         <transition name="fade">
+          <img v-if="confettiOn && allSameNumber" src="../assets/pikachu-dance.gif" alt="Pikachu celebration"
+            class="absolute inset-0 m-auto w-65 h-40 z-[10000] pointer-events-none" />
+        </transition>
+        <transition name="fade">
           <div v-if="showCountdown"
             class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-6xl font-bold text-brand-teal dark:text-white z-30">
             {{ countdownNum }}
@@ -415,7 +419,7 @@ const allSameNumber = computed(() => {
       </div>
 
       <template #footer>
-        <Button label="Close" @click="closeResultModal" class="!bg-brand-teal dark:!text-brand-white"/>
+        <Button label="Close" @click="closeResultModal" class="!bg-brand-teal dark:!text-brand-white" />
       </template>
     </Dialog>
   </main>
