@@ -175,7 +175,7 @@ watch(revealed, (isRev, wasRev) => {
       resultTimeout = window.setTimeout(() => {
         showResultModal.value = false;
         confettiOn.value = false;
-      }, 3000);
+      }, 4000);
     } else {
       showResultModal.value = true;
       confettiOn.value = false;
@@ -351,10 +351,6 @@ const allSameNumber = computed(() => {
         class="relative w-full h-[340px] rounded-2xl bg-brand-white dark:bg-black shadow-card ring-1 ring-brand-grayLight dark:ring-brand-black overflow-hidden">
         <Confetti v-if="confettiOn" :density="8" :durationMs="1600" :showPokemon="allSameNumber" />
         <transition name="fade">
-          <img v-if="confettiOn && allSameNumber" src="../assets/pikachu-dance.gif" alt="Pikachu celebration"
-            class="absolute inset-0 m-auto w-65 h-40 z-[10000] pointer-events-none" />
-        </transition>
-        <transition name="fade">
           <div v-if="showCountdown"
             class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-6xl font-bold text-brand-teal dark:text-white z-30">
             {{ countdownNum }}
@@ -413,8 +409,11 @@ const allSameNumber = computed(() => {
         <div class="text-4xl font-extrabold text-brand-teal dark:text-white">
           {{ average !== null ? average : "—" }}
         </div>
-        <p class="text-sm text-brand-gray/80 dark:!text-white">
+        <p v-if="!allSameNumber" class="text-sm text-brand-gray/80 dark:!text-white">
           This is the average of all numeric votes.
+        </p>
+          <p v-else class="text-sm text-brand-gray/80 dark:!text-white">
+          All votes are the same! 🎉
         </p>
       </div>
 
@@ -422,6 +421,10 @@ const allSameNumber = computed(() => {
         <Button label="Close" @click="closeResultModal" class="!bg-brand-teal dark:!text-brand-white" />
       </template>
     </Dialog>
+        <transition name="fade">
+      <img v-if="confettiOn && allSameNumber" src="../assets/pikachu-dance.gif" alt="Pikachu celebration"
+            class="absolute inset-0 m-auto w-max h-max z-[10000] pointer-events-none" />
+    </transition>
   </main>
 </template>
 
