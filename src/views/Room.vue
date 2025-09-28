@@ -31,6 +31,10 @@ const router = useRouter();
 const toast = useToast();
 const roomStore = useRoomStore();
 
+const ROUND_DURATION = 60;
+const BIG_DISAGREEMENT_THRESHOLD = 4;
+const MIN_VOTE = 2;
+
 onMounted(async () => {
   const id = String(route.params.id);
   const name = String(route.query.name || "Player");
@@ -65,7 +69,6 @@ const myVote = computed<string | null>(() => {
 });
 const norm = (v: unknown): string | null => (v == null ? null : String(v));
 
-const ROUND_DURATION = 60;
 const timeLeft = ref<number>(ROUND_DURATION);
 let timer: number | null = null;
 
@@ -140,6 +143,7 @@ watch(
 const showResultModal = ref<boolean>(false);
 const confettiOn = ref<boolean>(false);
 let resultTimeout: number | null = null;
+const showDisagreement = ref<boolean>(false);
 
 const isNumericVote = (v: unknown): v is number => {
   if (v == null) return false;
@@ -167,19 +171,18 @@ watch(revealed, (isRev, wasRev) => {
       (p) => p.vote !== null && p.vote !== undefined
     ).length;
 
-    if (voteCount > 1) {
-      showResultModal.value = true;
-      confettiOn.value = true;
+    const allowConfetti = voteCount >= MIN_VOTE && spreadInfo.value.spread < BIG_DISAGREEMENT_THRESHOLD;
 
-      if (resultTimeout) window.clearTimeout(resultTimeout);
-      resultTimeout = window.setTimeout(() => {
-        showResultModal.value = false;
-        confettiOn.value = false;
-      }, 4000);
-    } else {
-      showResultModal.value = true;
+    showDisagreement.value = spreadInfo.value.spread >= BIG_DISAGREEMENT_THRESHOLD;
+    showResultModal.value = true;
+    confettiOn.value = allowConfetti;
+
+    if (resultTimeout) window.clearTimeout(resultTimeout);
+    resultTimeout = window.setTimeout(() => {
+      showResultModal.value = false;
       confettiOn.value = false;
-    }
+      showDisagreement.value = false;
+    }, 5000);
   }
 });
 
@@ -262,6 +265,15 @@ const allSameNumber = computed(() => {
   if (validVotes.length === 0) return false;
   return validVotes.every((v) => v === validVotes[0]);
 });
+
+const spreadInfo = computed(() => {
+  const arr = numericVotes.value;
+  if (arr.length < 2) return { min: null as number | null, max: null as number | null, spread: 0 };
+  const min = Math.min(...arr);
+  const max = Math.max(...arr);
+  return { min, max, spread: max - min };
+});
+
 </script>
 
 <template>
@@ -412,7 +424,10 @@ const allSameNumber = computed(() => {
         <p v-if="!allSameNumber" class="text-sm text-brand-gray/80 dark:!text-white">
           This is the average of all numeric votes.
         </p>
-          <p v-else class="text-sm text-brand-gray/80 dark:!text-white">
+        <p v-if="showDisagreement" class="text-sm text-brand-gray/80 dark:!text-white">
+           Let’s discuss a bit more, we’re not aligned yet.
+        </p>
+        <p v-else class="text-sm text-brand-gray/80 dark:!text-white">
           All votes are the same! 🎉
         </p>
       </div>
@@ -421,13 +436,15 @@ const allSameNumber = computed(() => {
         <Button label="Close" @click="closeResultModal" class="!bg-brand-teal dark:!text-brand-white" />
       </template>
     </Dialog>
-        <transition name="fade">
+    <transition name="fade">
       <img v-if="confettiOn && allSameNumber" src="../assets/pikachu-dance.gif" alt="Pikachu celebration"
-            class="absolute inset-0 m-auto w-max h-max z-[10000] pointer-events-none" />
+        class="absolute inset-0 m-auto w-max h-max z-[10000] pointer-events-none" />
+    </transition>
+    <transition name="fade">
+        <img v-if="showDisagreement" src="../assets/pikachu-confused.gif" alt="Votes vary a lot, let's discuss" class="absolute inset-0 m-auto w-max h-max z-[10000] pointer-events-none" />
     </transition>
   </main>
 </template>
-
 <style scoped>
 .fade-enter-active,
 .fade-leave-active {
