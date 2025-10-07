@@ -440,9 +440,6 @@ const spreadInfo = computed(() => {
       <img v-if="confettiOn && allSameNumber" src="../assets/pikachu-dance.gif" alt="Pikachu celebration"
         class="absolute inset-0 m-auto w-max h-max z-[10000] pointer-events-none" />
     </transition>
-    <transition name="fade">
-        <img v-if="showDisagreement" src="../assets/pikachu-confused.gif" alt="Votes vary a lot, let's discuss" class="absolute inset-0 m-auto w-max h-max z-[10000] pointer-events-none" />
-    </transition>
   </main>
 </template>
 <style scoped>
