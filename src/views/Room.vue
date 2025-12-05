@@ -25,6 +25,7 @@ type RoomMeta = {
   revealCountdownStart: number | null;
   roundId: number;
 };
+type VoteEntry = { uid: string; name: string; value: string };
 
 const route = useRoute();
 const router = useRouter();
@@ -182,7 +183,7 @@ watch(revealed, (isRev, wasRev) => {
       showResultModal.value = false;
       confettiOn.value = false;
       showDisagreement.value = false;
-    }, 5000);
+    }, 5000000);
   }
 });
 
@@ -274,6 +275,53 @@ const spreadInfo = computed(() => {
   return { min, max, spread: max - min };
 });
 
+const comparableVotes = computed<VoteEntry[]>(() =>
+  Object.entries(roomStore.players as PlayersMap)
+    .map(([uid, player]) => ({ uid, name: player.name, value: norm(player.vote) }))
+    .filter((entry): entry is VoteEntry =>
+      !!entry.value && entry.value !== "?" && entry.value !== "☕"
+    )
+);
+
+const onlyOneDifferentResult = computed(() => {
+  const votes = comparableVotes.value;
+  if (votes.length < 2) {
+    return { isOnlyOneDifferent: false, outlier: null as VoteEntry | null, alignedValue: null as string | null };
+  }
+
+  const grouped = votes.reduce((acc, entry) => {
+    if (!acc[entry.value]) acc[entry.value] = [];
+    acc[entry.value]!.push(entry);
+    return acc;
+  }, {} as Record<string, VoteEntry[]>);
+
+  const groupEntries = Object.entries(grouped);
+  if (groupEntries.length !== 2) {
+    return { isOnlyOneDifferent: false, outlier: null, alignedValue: null };
+  }
+
+  const sorted = groupEntries.sort((a, b) => b[1].length - a[1].length);
+  const [majorityValue, majorityVoters] = sorted[0];
+  const [minorityValue, minorityVoters] = sorted[1];
+
+  if (minorityVoters.length !== 1) {
+    return { isOnlyOneDifferent: false, outlier: null, alignedValue: null };
+  }
+
+  if (majorityVoters.length !== votes.length - 1 || majorityVoters.length < 2) {
+    return { isOnlyOneDifferent: false, outlier: null, alignedValue: null };
+  }
+
+  return {
+    isOnlyOneDifferent: true,
+    outlier: { ...minorityVoters[0], value: minorityValue },
+    alignedValue: majorityValue,
+  };
+});
+
+const isOnlyOneDifferent = computed(() => onlyOneDifferentResult.value.isOnlyOneDifferent);
+const outlierVoter = computed(() => onlyOneDifferentResult.value.outlier);
+
 </script>
 
 <template>
@@ -294,7 +342,7 @@ const spreadInfo = computed(() => {
             class="!border-brand-gray !bg-brand-gray dark:!text-white" />
         </RouterLink>
         <Button icon="pi pi-link" label="Copy link" @click="copyLink"
-          class="!border-brand-tealMid dark:!text-white dark:!border-none" :class="{'!bg-brand-teal': true}" />
+          class="!border-brand-tealMid dark:!text-white dark:!border-none" :class="{ '!bg-brand-teal': true }" />
       </div>
     </header>
 
@@ -339,19 +387,17 @@ const spreadInfo = computed(() => {
         <template #title>Players</template>
         <template #content>
           <div class="flex flex-wrap gap-2">
-            <Tag v-for="p in playersArr" :key="p.uid" :value="
-      revealed
-        ? `${getDisplayName(p.name)} — ${norm(p.vote) ?? '—'}`
-        : norm(p.vote)
-        ? p.uid === roomStore.meUid
-          ? `${getDisplayName(p.name)} — ${norm(p.vote)}`
-          : `${getDisplayName(p.name)} — Voted`
-        : `${getDisplayName(p.name)} — Not voted`
-    " :class="
-      p.vote !== null && p.vote !== undefined
-        ? '!bg-brand-teal !text-white !border-brand-teal'
-        : '!bg-brand-yellow !text-brand-blackish !border-brand-yellow'
-    " />
+            <Tag v-for="p in playersArr" :key="p.uid" :value="revealed
+              ? `${getDisplayName(p.name)} — ${norm(p.vote) ?? '—'}`
+              : norm(p.vote)
+                ? p.uid === roomStore.meUid
+                  ? `${getDisplayName(p.name)} — ${norm(p.vote)}`
+                  : `${getDisplayName(p.name)} — Voted`
+                : `${getDisplayName(p.name)} — Not voted`
+              " :class="p.vote !== null && p.vote !== undefined
+                ? '!bg-brand-teal !text-white !border-brand-teal'
+                : '!bg-brand-yellow !text-brand-blackish !border-brand-yellow'
+                " />
           </div>
         </template>
       </Card>
@@ -372,12 +418,11 @@ const spreadInfo = computed(() => {
         <div class="absolute inset-0">
           <div v-for="(p, i) in visiblePlayers" :key="p.uid" class="absolute left-1/2 top-1/2"
             :style="{ transform: seatTransform(i) }">
-            <PlayerSeat :name="p.name" :vote="
-                p.uid === roomStore.meUid
-                  ? norm(p.vote)
-                  : revealed
-                  ? norm(p.vote)
-                  : null
+            <PlayerSeat :name="p.name" :vote="p.uid === roomStore.meUid
+              ? norm(p.vote)
+              : revealed
+                ? norm(p.vote)
+                : null
               " :revealed="revealed" />
           </div>
         </div>
@@ -424,12 +469,19 @@ const spreadInfo = computed(() => {
         <p v-if="!allSameNumber" class="text-sm text-brand-gray/80 dark:!text-white">
           This is the average of all numeric votes.
         </p>
-        <p v-if="showDisagreement" class="text-sm text-brand-gray/80 dark:!text-white">
-           Let’s discuss a bit more, we’re not aligned yet.
-        </p>
-        <p v-else class="text-sm text-brand-gray/80 dark:!text-white">
-          All votes are the same! 🎉
-        </p>
+        <div class="flex flex-col items-center gap-2">
+          <p v-if="showDisagreement" class="text-sm text-center text-brand-gray/80 dark:!text-white">
+            Let’s discuss a bit more — we’re not aligned yet.
+          </p>
+          <p v-if="isOnlyOneDifferent && outlierVoter" class="text-sm text-center text-brand-gray/80 dark:!text-white">
+            Only <b>{{ getDisplayName(outlierVoter.name) }}</b> voted <b>{{ outlierVoter.value }}</b>, so coffee is on
+            <b class="font-semibold text-brand-teal">{{ getDisplayName(outlierVoter.name) }}</b>
+            ☕
+          </p>
+          <p v-if="allSameNumber" class="text-sm text-center text-brand-gray/80 dark:!text-white">
+            All votes are the same! 🎉
+          </p>
+        </div>
       </div>
 
       <template #footer>
@@ -438,7 +490,11 @@ const spreadInfo = computed(() => {
     </Dialog>
     <transition name="fade">
       <img v-if="confettiOn && allSameNumber" src="../assets/pikachu-dance.gif" alt="Pikachu celebration"
-        class="absolute inset-0 m-auto w-max h-max z-[10000] pointer-events-none" />
+        class="absolute inset-0 m-auto w-auto h-max z-[10000] pointer-events-none" />
+    </transition>
+    <transition name="fade">
+      <img v-if="confettiOn && isOnlyOneDifferent" src="../assets/coffee.gif" alt="Coffee buying"
+        class="absolute inset-0 m-auto w-auto h-60 z-[10000] pointer-events-none" />
     </transition>
   </main>
 </template>
@@ -447,14 +503,17 @@ const spreadInfo = computed(() => {
 .fade-leave-active {
   transition: opacity 0.5s ease;
 }
+
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
 }
+
 .scale-enter-active,
 .scale-leave-active {
   transition: transform 0.3s ease, opacity 0.3s ease;
 }
+
 .scale-enter-from,
 .scale-leave-to {
   transform: scale(0.9);
