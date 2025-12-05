@@ -183,7 +183,7 @@ watch(revealed, (isRev, wasRev) => {
       showResultModal.value = false;
       confettiOn.value = false;
       showDisagreement.value = false;
-    }, 5000000);
+    }, 5000);
   }
 });
 
