@@ -241,7 +241,7 @@ const copyLink = (): void => {
 const playersArr = computed<Array<Player & { uid: string }>>(() =>
   Object.entries(roomStore.players as PlayersMap)
     .map(([uid, p]) => ({ uid, ...p }))
-    .sort((a, b) => a.name.localeCompare(b.name))
+    .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""))
 );
 
 const visiblePlayers = computed<Array<Player & { uid: string }>>(() =>
