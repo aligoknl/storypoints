@@ -1,14 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { db, auth } from "../lib/firebase";
-import {
-  ref as dbRef,
-  set,
-  update,
-  get,
-  onValue,
-  off,
-} from "firebase/database";
+import { ref as dbRef, set, update, get, onValue, off, runTransaction } from "firebase/database";
 import DEFAULT_DECK from "../constants/deckValues";
 
 type Player = { name: string; vote: string | null; joinedAt: number };
@@ -34,6 +27,8 @@ const slugify = (text: string) =>
 
 const ensureDeck = (deck?: string[]): string[] =>
   Array.isArray(deck) && deck.length > 0 ? deck : DEFAULT_DECK;
+
+const normalizeName = (name: string): string => name.trim().replace(/\s+/g, " ").toLowerCase();
 
 export const useRoomStore = defineStore("room", () => {
   const roomId = ref("");
@@ -76,24 +71,42 @@ export const useRoomStore = defineStore("room", () => {
   const joinRoom = async (id: string, name: string) => {
     if (!auth.currentUser) throw new Error("Not authenticated yet.");
     const uid = auth.currentUser.uid;
+    const trimmedName = name.trim();
+    if (!trimmedName) throw new Error("Please enter your name.");
 
     const metaSnap = await get(dbRef(db, `rooms/${id}/meta`));
     if (!metaSnap.exists()) throw new Error("Room not found.");
-
-    roomId.value = id;
-    meUid.value = uid;
-    meName.value = name;
-
-    await update(dbRef(db, `rooms/${id}/players/${uid}`), {
-      name,
-      vote: players.value[uid]?.vote ?? null,
-      joinedAt: Date.now(),
-    });
 
     leaveRoom();
 
     const metaRef = dbRef(db, `rooms/${id}/meta`);
     const playersRef = dbRef(db, `rooms/${id}/players`);
+    const normalized = normalizeName(trimmedName);
+
+    const transactionResult = await runTransaction(playersRef, (current) => {
+      const currentPlayers = (current ?? {}) as Record<string, Player>;
+      const nameTaken = Object.entries(currentPlayers).some(
+        ([playerUid, player]) =>
+          playerUid !== uid && normalizeName(player?.name ?? "") === normalized
+      );
+      if (nameTaken) return;
+
+      const existing = currentPlayers[uid];
+      currentPlayers[uid] = {
+        name: trimmedName,
+        vote: existing?.vote ?? null,
+        joinedAt: existing?.joinedAt ?? Date.now(),
+      };
+      return currentPlayers;
+    });
+
+    if (!transactionResult.committed) {
+      throw new Error("Name already used in this room. Please choose another name.");
+    }
+
+    roomId.value = id;
+    meUid.value = uid;
+    meName.value = trimmedName;
 
     const metaListener = onValue(metaRef, (snap) => {
       const data = snap.val() as RoomMeta | null;
@@ -138,12 +151,12 @@ export const useRoomStore = defineStore("room", () => {
   };
 
   const stopRoundCountdown = async (): Promise<void> => {
-  if (!roomId.value) return;
-  await update(dbRef(db, `rooms/${roomId.value}/meta`), {
-    countdownStart: null,
-    revealCountdownStart: null,
-  });
-};
+    if (!roomId.value) return;
+    await update(dbRef(db, `rooms/${roomId.value}/meta`), {
+      countdownStart: null,
+      revealCountdownStart: null,
+    });
+  };
 
   const reveal = async () => {
     if (!roomId.value) return;

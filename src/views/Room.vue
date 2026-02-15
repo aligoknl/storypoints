@@ -35,6 +35,8 @@ const roomStore = useRoomStore();
 const ROUND_DURATION = 60;
 const BIG_DISAGREEMENT_THRESHOLD = 4;
 const MIN_VOTE = 2;
+const isJoining = ref<boolean>(true);
+const joinFailed = ref<boolean>(false);
 
 onMounted(async () => {
   const id = String(route.params.id);
@@ -42,6 +44,7 @@ onMounted(async () => {
 
   try {
     await roomStore.joinRoom(id, name);
+    isJoining.value = false;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to join room.";
     toast.add({
@@ -50,7 +53,9 @@ onMounted(async () => {
       detail: msg,
       life: 3000,
     });
-    router.push("/");
+    joinFailed.value = true;
+    isJoining.value = false;
+    await router.push("/");
   }
 });
 
@@ -145,6 +150,12 @@ const showResultModal = ref<boolean>(false);
 const confettiOn = ref<boolean>(false);
 let resultTimeout: number | null = null;
 const showDisagreement = ref<boolean>(false);
+const clearResultTimeout = (): void => {
+  if (resultTimeout) {
+    window.clearTimeout(resultTimeout);
+    resultTimeout = null;
+  }
+};
 
 const isNumericVote = (v: unknown): v is number => {
   if (v == null) return false;
@@ -159,6 +170,9 @@ const numericVotes = computed<number[]>(() =>
     .map((v) => Number(String(v).replace(",", ".")))
 );
 
+const hasNumericVotes = computed<boolean>(() => numericVotes.value.length > 0);
+const hasSingleNumericVote = computed<boolean>(() => numericVotes.value.length === 1);
+
 const average = computed<number | null>(() => {
   const arr = numericVotes.value;
   if (!arr.length) return null;
@@ -172,18 +186,21 @@ watch(revealed, (isRev, wasRev) => {
       (p) => p.vote !== null && p.vote !== undefined
     ).length;
 
-    const allowConfetti = voteCount >= MIN_VOTE && spreadInfo.value.spread < BIG_DISAGREEMENT_THRESHOLD;
+    const allowConfetti =
+      hasNumericVotes.value &&
+      voteCount >= MIN_VOTE &&
+      spreadInfo.value.spread < BIG_DISAGREEMENT_THRESHOLD;
 
     showDisagreement.value = spreadInfo.value.spread >= BIG_DISAGREEMENT_THRESHOLD;
     showResultModal.value = true;
     confettiOn.value = allowConfetti;
 
-    if (resultTimeout) window.clearTimeout(resultTimeout);
+    clearResultTimeout();
     resultTimeout = window.setTimeout(() => {
       showResultModal.value = false;
       confettiOn.value = false;
       showDisagreement.value = false;
-    }, 5000);
+    }, 10000);
   }
 });
 
@@ -201,10 +218,7 @@ watch([revealed, average], async ([isRev, avg]) => {
 const closeResultModal = (): void => {
   showResultModal.value = false;
   confettiOn.value = false;
-  if (resultTimeout) {
-    window.clearTimeout(resultTimeout);
-    resultTimeout = null;
-  }
+  clearResultTimeout();
 };
 
 const cast = (v: string): void => {
@@ -224,6 +238,10 @@ const stopRound = async (): Promise<void> => {
 };
 
 const startNewVoting = async (): Promise<void> => {
+  clearResultTimeout();
+  showResultModal.value = false;
+  confettiOn.value = false;
+  showDisagreement.value = false;
   await roomStore.startNewVoting();
 };
 
@@ -325,7 +343,7 @@ const outlierVoter = computed(() => onlyOneDifferentResult.value.outlier);
 </script>
 
 <template>
-  <main class="p-6 max-w-5xl mx-auto space-y-6 text-brand-gray">
+  <main v-if="!isJoining && !joinFailed" class="relative p-6 max-w-5xl mx-auto space-y-6 text-brand-gray">
     <Toast class="dark:!bg-gray-800 dark:!text-gray-100" />
     <header class="flex flex-wrap items-center justify-between gap-3">
       <div>
@@ -368,10 +386,10 @@ const outlierVoter = computed(() => onlyOneDifferentResult.value.outlier);
         <template #title>Average</template>
         <template #content>
           <template v-if="revealed">
-            <p v-if="average !== null" class="text-3xl font-bold text-brand-teal">
+            <p v-if="average !== null" class="text-3xl font-bold text-brand-teal dark:!text-white">
               {{ average }}
             </p>
-            <p v-else class="text-sm text-brand-gray/90">
+            <p v-else class="text-sm text-brand-gray/90 dark:!text-white">
               No numeric votes yet (coffee & “?” ignored).
             </p>
           </template>
@@ -466,19 +484,26 @@ const outlierVoter = computed(() => onlyOneDifferentResult.value.outlier);
         <div class="text-4xl font-extrabold text-brand-teal dark:text-white">
           {{ average !== null ? average : "—" }}
         </div>
-        <p v-if="!allSameNumber" class="text-sm text-brand-gray/80 dark:!text-white">
+        <p v-if="!hasNumericVotes" class="text-sm text-brand-gray/80 dark:!text-white">
+          No numeric votes yet. Please encourage everyone to vote with numbers for the average to be meaningful.
+        </p>
+        <p v-else-if="!allSameNumber" class="text-sm text-brand-gray/80 dark:!text-white">
           This is the average of all numeric votes.
         </p>
         <div class="flex flex-col items-center gap-2">
           <p v-if="showDisagreement" class="text-sm text-center text-brand-gray/80 dark:!text-white">
             Let’s discuss a bit more — we’re not aligned yet.
           </p>
-          <p v-if="isOnlyOneDifferent && outlierVoter" class="text-sm text-center text-brand-gray/80 dark:!text-white">
+          <p v-if="isOnlyOneDifferent && outlierVoter && !showDisagreement"
+            class="text-sm text-center text-brand-gray/80 dark:!text-white">
             Only <b>{{ getDisplayName(outlierVoter.name) }}</b> voted <b>{{ outlierVoter.value }}</b>, so coffee is on
             <b class="font-semibold text-brand-teal">{{ getDisplayName(outlierVoter.name) }}</b>
             ☕
           </p>
-          <p v-if="allSameNumber" class="text-sm text-center text-brand-gray/80 dark:!text-white">
+          <p v-if="hasSingleNumericVote" class="text-sm text-center text-brand-gray/80 dark:!text-white">
+            There is only one numeric vote so far.
+          </p>
+          <p v-else-if="allSameNumber" class="text-sm text-center text-brand-gray/80 dark:!text-white">
             All votes are the same! 🎉
           </p>
         </div>
@@ -490,13 +515,14 @@ const outlierVoter = computed(() => onlyOneDifferentResult.value.outlier);
     </Dialog>
     <transition name="fade">
       <img v-if="confettiOn && allSameNumber" src="../assets/pikachu-dance.gif" alt="Pikachu celebration"
-        class="absolute inset-0 m-auto w-auto h-max z-[10000] pointer-events-none" />
+        class="absolute inset-0 m-auto max-w-[360px] w-full h-auto z-40 pointer-events-none" />
     </transition>
-    <transition name="fade">
-      <img v-if="confettiOn && isOnlyOneDifferent" src="../assets/coffee.gif" alt="Coffee buying"
-        class="absolute inset-0 m-auto w-auto h-60 z-[10000] pointer-events-none" />
-    </transition>
+    <img v-if="confettiOn && isOnlyOneDifferent && !showDisagreement" src="../assets/coffee.gif" alt="Coffee buying"
+      class="coffee-fly pointer-events-none" />
   </main>
+  <div v-else-if="isJoining" class="min-h-[60vh] flex items-center justify-center text-brand-gray/80">
+    Joining room...
+  </div>
 </template>
 <style scoped>
 .fade-enter-active,
@@ -518,5 +544,36 @@ const outlierVoter = computed(() => onlyOneDifferentResult.value.outlier);
 .scale-leave-to {
   transform: scale(0.9);
   opacity: 0;
+}
+
+.coffee-fly {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: min(420px, 80vw);
+  height: auto;
+  z-index: 90;
+  pointer-events: none;
+  animation: coffee-fly 6s ease-in-out;
+}
+
+@keyframes coffee-fly {
+  0% {
+    transform: translate(calc(-50% + 120vw), -50%);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(calc(-50% - 120vw), -50%);
+    opacity: 0;
+  }
 }
 </style>

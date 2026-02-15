@@ -77,6 +77,10 @@ const handleJoin = async (): Promise<void> => {
     return;
   }
   const slug = slugify(joinRoomName.value);
+  if (!slug) {
+    showError("Invalid room name", "Please enter a valid room name.");
+    return;
+  }
   try {
     await roomStore.joinRoom(slug, joinYourName.value);
     saveNameLocally(joinYourName.value, joinRoomName.value);
@@ -99,6 +103,7 @@ const handleJoin = async (): Promise<void> => {
         <div class="flex flex-col gap-3">
           <InputText v-model="joinRoomName" placeholder="Room name" class="w-full" />
           <InputText v-model="joinYourName" placeholder="Your name" class="w-full" />
+          <p class="text-xs text-gray-500 dark:text-white">Names must be unique within a room.</p>
           <Button label="Join Room"
             class="self-start !bg-brand-yellow !border-brand-yellow hover:!bg-brand-yellowMid !text-brand-blackish"
             @click="handleJoin" />
@@ -108,7 +113,7 @@ const handleJoin = async (): Promise<void> => {
 
     <div class="flex items-center gap-3 text-sm text-gray-500">
       <div class="h-px flex-1 bg-gray-200"></div>
-      <span class="tracking-wider text-gray-500 dark:text-black" >— OR —</span>
+      <span class="tracking-wider text-gray-500 dark:text-black">— OR —</span>
       <div class="h-px flex-1 bg-gray-200"></div>
     </div>
 
@@ -118,6 +123,7 @@ const handleJoin = async (): Promise<void> => {
         <div class="flex flex-col gap-3">
           <InputText v-model="createRoomName" placeholder="Room name (e.g., Emerald)" class="w-full" />
           <InputText v-model="createYourName" placeholder="Your name" class="w-full" />
+          <p class="text-xs text-gray-500 dark:text-white">Names must be unique within a room.</p>
           <Button label="Create Room" class="self-start
          !bg-brand-teal !border-brand-teal !text-white
          hover:!bg-brand-tealMid
