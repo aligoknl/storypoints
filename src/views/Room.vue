@@ -181,6 +181,93 @@ const average = computed<number | null>(() => {
   return Math.round((sum / arr.length) * 100) / 100;
 });
 
+const voteOrderByUid = ref<Record<string, number>>({});
+const lastSeenVotes = ref<Record<string, string | null>>({});
+const voteSequence = ref<number>(0);
+
+const resetVoteOrder = (): void => {
+  voteOrderByUid.value = {};
+  lastSeenVotes.value = {};
+  voteSequence.value = 0;
+};
+
+watch(
+  () => (roomStore.roomMeta as RoomMeta | null)?.roundId,
+  () => {
+    resetVoteOrder();
+  },
+  { immediate: true }
+);
+
+watch(
+  () => roomStore.players as PlayersMap,
+  (players) => {
+    const currentVotes: Record<string, string | null> = {};
+
+    Object.entries(players).forEach(([uid, player]) => {
+      const currentVote = norm(player.vote);
+      currentVotes[uid] = currentVote;
+
+      const prevVote = lastSeenVotes.value[uid] ?? null;
+      if (prevVote === null && currentVote !== null && voteOrderByUid.value[uid] === undefined) {
+        voteSequence.value += 1;
+        voteOrderByUid.value[uid] = voteSequence.value;
+      }
+    });
+
+    voteOrderByUid.value = Object.fromEntries(
+      Object.entries(voteOrderByUid.value).filter(([uid]) => uid in currentVotes)
+    );
+
+    lastSeenVotes.value = currentVotes;
+  },
+  { immediate: true, deep: true }
+);
+
+const orderedVoters = computed<[string, number][]>(() =>
+  Object.entries(voteOrderByUid.value).sort((a, b) => a[1] - b[1])
+);
+
+const firstVoterUid = computed<string | null>(() => {
+  const first = orderedVoters.value[0];
+  return first ? first[0] : null;
+});
+
+const showLastVoterBadge = computed<boolean>(() => {
+  const meta = roomStore.roomMeta as RoomMeta | null;
+  return !!meta?.revealCountdownStart || revealed.value;
+});
+
+const lastVoterUid = computed<string | null>(() => {
+  if (!showLastVoterBadge.value) return null;
+  const last = orderedVoters.value[orderedVoters.value.length - 1];
+  return last ? last[0] : null;
+});
+
+const playerNameWithVotingBadge = (uid: string, name: string): string => {
+  const display = getDisplayName(name);
+  if (uid === firstVoterUid.value) return `${display} 🐇`;
+  if (uid === lastVoterUid.value && uid !== firstVoterUid.value) return `${display} 🐢`;
+  return display;
+};
+
+const playerTagValue = (player: Player & { uid: string }): string => {
+  const displayName = playerNameWithVotingBadge(player.uid, player.name);
+  const voteValue = norm(player.vote);
+
+  if (revealed.value) {
+    return `${displayName} — ${voteValue ?? "—"}`;
+  }
+
+  if (voteValue) {
+    return player.uid === roomStore.meUid
+      ? `${displayName} — ${voteValue}`
+      : `${displayName} — Voted`;
+  }
+
+  return `${displayName} — Not voted`;
+};
+
 const recommendedStoryPoint = computed<number | null>(() => {
   return recommendStoryPointFromAverage(average.value, deck.value);
 });
@@ -413,17 +500,10 @@ const outlierVoter = computed(() => onlyOneDifferentResult.value.outlier);
         <template #title>Players</template>
         <template #content>
           <div class="flex flex-wrap gap-2">
-            <Tag v-for="p in playersArr" :key="p.uid" :value="revealed
-              ? `${getDisplayName(p.name)} — ${norm(p.vote) ?? '—'}`
-              : norm(p.vote)
-                ? p.uid === roomStore.meUid
-                  ? `${getDisplayName(p.name)} — ${norm(p.vote)}`
-                  : `${getDisplayName(p.name)} — Voted`
-                : `${getDisplayName(p.name)} — Not voted`
-              " :class="p.vote !== null && p.vote !== undefined
-                ? '!bg-brand-teal !text-white !border-brand-teal'
-                : '!bg-brand-yellow !text-brand-blackish !border-brand-yellow'
-                " />
+            <Tag v-for="p in playersArr" :key="p.uid" :value="playerTagValue(p)" :class="p.vote !== null && p.vote !== undefined
+              ? '!bg-brand-teal !text-white !border-brand-teal'
+              : '!bg-brand-yellow !text-brand-blackish !border-brand-yellow'
+              " />
           </div>
         </template>
       </Card>
