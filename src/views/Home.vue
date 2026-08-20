@@ -113,7 +113,7 @@ const handleJoin = async (): Promise<void> => {
 
     <div class="flex items-center gap-3 text-sm text-gray-500">
       <div class="h-px flex-1 bg-gray-200"></div>
-      <span class="tracking-wider text-gray-500 dark:text-black">— OR —</span>
+      <span class="tracking-wider text-gray-500 font-bold dark:text-black">— OR —</span>
       <div class="h-px flex-1 bg-gray-200"></div>
     </div>
 
