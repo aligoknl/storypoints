@@ -12,6 +12,7 @@ import PlanningCard from "../components/PlanningCard.vue";
 import PlayerSeat from "../components/PlayerSeat.vue";
 import Confetti from "../components/Confetti.vue";
 import { getDisplayName } from "../utils/displayName";
+import { recommendStoryPointFromAverage } from "../utils/storyPointRecommendation";
 import DEFAULT_DECK from "../constants/deckValues";
 
 type Player = { name: string; vote: string | null; joinedAt: number };
@@ -180,6 +181,10 @@ const average = computed<number | null>(() => {
   return Math.round((sum / arr.length) * 100) / 100;
 });
 
+const recommendedStoryPoint = computed<number | null>(() => {
+  return recommendStoryPointFromAverage(average.value, deck.value);
+});
+
 watch(revealed, (isRev, wasRev) => {
   if (isRev && !wasRev) {
     const voteCount = Object.values(roomStore.players).filter(
@@ -209,7 +214,7 @@ const srAverageMsg = ref<string>("");
 watch([revealed, average], async ([isRev, avg]) => {
   if (isRev && (avg !== null)) {
     await nextTick();
-    srAverageMsg.value = `Average ${avg}`;
+    srAverageMsg.value = `Recommended story point ${recommendedStoryPoint.value}. Average ${avg}`;
   } else if (!isRev) {
     srAverageMsg.value = "";
   }
@@ -383,17 +388,20 @@ const outlierVoter = computed(() => onlyOneDifferentResult.value.outlier);
       </Card>
 
       <Card>
-        <template #title>Average</template>
+        <template #title>Result</template>
         <template #content>
           <template v-if="revealed">
-            <p v-if="average !== null" class="text-3xl font-bold text-brand-teal dark:!text-white">
-              {{ average }}
+            <p v-if="recommendedStoryPoint !== null" class="text-3xl font-bold text-brand-teal dark:!text-white">
+              {{ recommendedStoryPoint }}
+            </p>
+            <p v-if="average !== null" class="text-sm text-brand-gray/80 dark:!text-white">
+              Average: {{ average }}
             </p>
             <p v-else class="text-sm text-brand-gray/90 dark:!text-white">
-              No numeric votes yet (coffee & “?” ignored).
+              No numeric votes yet (coffee and "?" ignored).
             </p>
           </template>
-          <p v-else class="text-sm text-brand-gray/80 dark:!text-white">Revealed average appears here.</p>
+          <p v-else class="text-sm text-brand-gray/80 dark:!text-white">Revealed result appears here.</p>
         </template>
       </Card>
 
@@ -482,13 +490,16 @@ const outlierVoter = computed(() => onlyOneDifferentResult.value.outlier);
 
       <div class="text-center space-y-3">
         <div class="text-4xl font-extrabold text-brand-teal dark:text-white">
-          {{ average !== null ? average : "—" }}
+          {{ recommendedStoryPoint !== null ? recommendedStoryPoint : "—" }}
         </div>
+        <p v-if="average !== null" class="text-sm text-brand-gray/80 dark:!text-white">
+          Average: {{ average }}
+        </p>
         <p v-if="!hasNumericVotes" class="text-sm text-brand-gray/80 dark:!text-white">
           No numeric votes yet. Please encourage everyone to vote with numbers for the average to be meaningful.
         </p>
         <p v-else-if="!allSameNumber" class="text-sm text-brand-gray/80 dark:!text-white">
-          This is the average of all numeric votes.
+          This recommended story point is the closest value from your current deck.
         </p>
         <div class="flex flex-col items-center gap-2">
           <p v-if="showDisagreement" class="text-sm text-center text-brand-gray/80 dark:!text-white">

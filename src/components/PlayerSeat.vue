@@ -1,9 +1,17 @@
 <script setup lang="ts">
+import { computed } from "vue";
+
 const props = defineProps<{
   name: string;
   vote: string | null;
   revealed: boolean;
 }>();
+
+const seatDisplayName = computed<string>(() => {
+  const normalized = props.name.trim().toLowerCase();
+  if (normalized === "alexander") return "AtM";
+  return props.name;
+});
 </script>
 
 <template>
@@ -31,7 +39,7 @@ const props = defineProps<{
          leading-tight max-w-[120px] line-clamp-2 text-ellipsis"
   :title="props.name"
 >
-  {{ props.name }}
+  {{ seatDisplayName }}
 </div>
   </div>
 </template>

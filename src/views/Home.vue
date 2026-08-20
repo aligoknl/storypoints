@@ -94,7 +94,7 @@ const handleJoin = async (): Promise<void> => {
 </script>
 
 <template>
-  <main class="p-6 max-w-xl mx-auto space-y-6">
+  <main class="p-3 max-w-xl mx-auto space-y-6">
     <Toast />
     <h1 class="text-3xl font-bold text-brand-teal text-center dark:text-black">AllStoryPoints</h1>
     <Card>
@@ -134,7 +134,7 @@ const handleJoin = async (): Promise<void> => {
       </template>
     </Card>
 
-    <footer class="pt-6 text-center text-xs text-gray-500 dark:text-black">
+    <footer class="pt-2 text-center text-xs font-bold text-gray-600 dark:text-black">
       Created by • Ali Gök • © 2025
     </footer>
   </main>
